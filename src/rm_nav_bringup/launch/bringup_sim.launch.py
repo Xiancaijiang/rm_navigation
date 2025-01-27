@@ -80,6 +80,7 @@ def generate_launch_description():
         default_value='True',
         description='Visualize navigation2 if true')
 
+#set config of world
     declare_world_cmd = DeclareLaunchArgument(
         'world',
         default_value='RMUL',
@@ -101,8 +102,8 @@ def generate_launch_description():
         description='Choose lio alogrithm: fastlio or pointlio')
 
     # Specify the actions
-    start_rm_simulation = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(pb_rm_simulation_launch_dir, 'rm_simulation.launch.py')),
+    start_rm_simulation = IncludeLaunchDescription(     #action 1
+        PythonLaunchDescriptionSource(os.path.join(pb_rm_simulation_launch_dir, 'rm_simulation.launch.py')),         # under pb_rm_simulation,start rviz and Gazebo about simulation
         launch_arguments={
             'use_sim_time': use_sim_time,
             'world': world,
@@ -110,8 +111,8 @@ def generate_launch_description():
             'rviz': 'False'}.items()
     )
 
-    bringup_imu_complementary_filter_node = Node(
-        package='imu_complementary_filter',
+    bringup_imu_complementary_filter_node = Node(    #action2
+        package='imu_complementary_filter',            # under rm_perception,start imu filter
         executable='complementary_filter_node',
         name='complementary_filter_gain_node',
         output='screen',
@@ -127,15 +128,15 @@ def generate_launch_description():
         ]
     )
 
-    bringup_linefit_ground_segmentation_node = Node(
-        package='linefit_ground_segmentation_ros',
+    bringup_linefit_ground_segmentation_node = Node( # action3
+        package='linefit_ground_segmentation_ros',  #under rm_perception,start ground_segmentation_node
         executable='ground_segmentation_node',
         output='screen',
         parameters=[segmentation_params]
     )
 
-    bringup_pointcloud_to_laserscan_node = Node(
-        package='pointcloud_to_laserscan', executable='pointcloud_to_laserscan_node',
+    bringup_pointcloud_to_laserscan_node = Node( #action4
+        package='pointcloud_to_laserscan', executable='pointcloud_to_laserscan_node', #under rm_perception,start pointcloud_to_laserscan_node,2D Slam algorithm needed
         remappings=[('cloud_in',  ['/segmentation/obstacle']),
                     ('scan',  ['/scan'])],
         parameters=[{
@@ -154,8 +155,8 @@ def generate_launch_description():
         }],
         name='pointcloud_to_laserscan'
     )
-
-    bringup_LIO_group = GroupAction([
+    
+    bringup_LIO_group = GroupAction([       #action_group 5   LIO
         Node(
             package="tf2_ros",
             executable="static_transform_publisher",
@@ -172,19 +173,22 @@ def generate_launch_description():
             ],
         ),
 
+        # Select fastlio's start action based on the lio parameter
         GroupAction(
             condition = LaunchConfigurationEquals('lio', 'fastlio'),
             actions=[
             Node(
-                package='fast_lio',
+                package='fast_lio',  # under rm_localization,start fast_lio,
                 executable='fastlio_mapping',
                 parameters=[
                     fastlio_mid360_params,
                     {use_sim_time: use_sim_time}
                 ],
                 output='screen'
+
+
             ),
-            Node(
+            Node(             # Launch RViz visualization if needed
                 package='rviz2',
                 executable='rviz2',
                 arguments=['-d', fastlio_rviz_cfg_dir],
@@ -192,7 +196,8 @@ def generate_launch_description():
             ),
         ]),
 
-        GroupAction(
+        # Select pointlio's start action based on the lio parameter
+        GroupAction(          #action_group 5
             condition = LaunchConfigurationEquals('lio', 'pointlio'),
             actions=[
             Node(
@@ -215,7 +220,7 @@ def generate_launch_description():
                     'runtime_pos_log_enable': False}
                 ],
             ),
-            Node(
+            Node(        # Launch RViz visualization if needed
                 package='rviz2',
                 executable='rviz2',
                 arguments=['-d', pointlio_rviz_cfg_dir],
@@ -224,12 +229,13 @@ def generate_launch_description():
         ])
     ])
 
-    start_localization_group = GroupAction(
+    # Enable Localization Group actions, only enabled when mode is nav
+    start_localization_group = GroupAction(    #action_group 6
         condition = LaunchConfigurationEquals('mode', 'nav'),
-        actions=[
+        actions=[                #3 conditions
             Node(
                 condition = LaunchConfigurationEquals('localization', 'slam_toolbox'),
-                package='slam_toolbox',
+                package='slam_toolbox',       
                 executable='localization_slam_toolbox_node',
                 name='slam_toolbox',
                 parameters=[
@@ -241,13 +247,14 @@ def generate_launch_description():
             ),
 
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(navigation2_launch_dir,'localization_amcl_launch.py')),
+                PythonLaunchDescriptionSource(os.path.join(navigation2_launch_dir,'localization_amcl_launch.py')),      # under rm_navigation
                 condition = LaunchConfigurationEquals('localization', 'amcl'),
                 launch_arguments = {
                     'use_sim_time': use_sim_time,
                     'params_file': nav2_params_file_dir}.items()
             ),
 
+            #DELAY 7s
             TimerAction(
                 period=7.0,
                 actions=[
@@ -267,7 +274,7 @@ def generate_launch_description():
             ),
 
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(navigation2_launch_dir, 'map_server_launch.py')),
+                PythonLaunchDescriptionSource(os.path.join(navigation2_launch_dir, 'map_server_launch.py')),  # under rm_navigation
                 condition = LaunchConfigurationNotEquals('localization', 'slam_toolbox'),
                 launch_arguments={
                     'use_sim_time': use_sim_time,
@@ -277,8 +284,8 @@ def generate_launch_description():
         ]
     )
 
-    bringup_fake_vel_transform_node = Node(
-        package='fake_vel_transform',
+    bringup_fake_vel_transform_node = Node(      #action 7
+        package='fake_vel_transform',              #under rm_navigation
         executable='fake_vel_transform_node',
         output='screen',
         parameters=[{
@@ -287,7 +294,7 @@ def generate_launch_description():
         }]
     )
 
-    start_mapping = Node(
+    start_mapping = Node(                   #action 8
         condition = LaunchConfigurationEquals('mode', 'mapping'),
         package='slam_toolbox',
         executable='async_slam_toolbox_node',
@@ -298,8 +305,9 @@ def generate_launch_description():
         ],
     )
 
-    start_navigation2 = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(navigation2_launch_dir, 'bringup_rm_navigation.py')),
+    start_navigation2 = IncludeLaunchDescription(        #action 9
+        PythonLaunchDescriptionSource(os.path.join(navigation2_launch_dir, 'bringup_rm_navigation.py')),  #under rm_navigation
+        executable='fake_vel_transform_node',
         launch_arguments={
             'use_sim_time': use_sim_time,
             'map': nav2_map_dir,

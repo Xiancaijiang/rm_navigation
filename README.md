@@ -1,36 +1,72 @@
-# RM-SIMULATION
+# RM Navigation System
 
-Learn navigation algorithms through codinghttps://github.com/Xiancaijiang/RM_SIMULATION.git
+A comprehensive ROS2-based navigation system for RoboMaster robots, featuring advanced localization, mapping, and path planning capabilities.
 
-## 1.pb_RM_simulation_launch
+## System Architecture
 
-- bringup_real.launch.pu
-- bringup_sim.launch.pu
+![System Architecture](docs/architecture.png) (Note: Add architecture diagram later)
 
-launch: The most important concept is the **action** .
+## Key Modules
 
-To understand the code in detail, my habit is to learn the entire code architecture through launch file.
+### 1. Localization
+- **FAST_LIO**: Lightweight and fast LiDAR-inertial odometry
+- **Point-LIO**: Point cloud based LiDAR-inertial odometry  
+- **ICP Registration**: Point cloud registration for map matching
 
+### 2. Perception
+- **Ground Segmentation**: Real-time ground plane detection
+- **Point Cloud Processing**: Point cloud filtering and transformation
+- **IMU Filtering**: Complementary filter for IMU data fusion
 
+### 3. Navigation
+- **Global Planner**: A* based global path planning
+- **Local Planner**: TEB local planner with dynamic obstacle avoidance
+- **Costmap Management**: Multi-layer costmap integration
 
-## 2.rm_localization
+### 4. Simulation
+- **Gazebo Simulation**: High-fidelity robot and environment simulation
+- **RViz Visualization**: Real-time visualization of navigation data
 
-- point_lio
+## Installation
 
-	To explain the key parts of Point_Lio algorithm
+```bash
+# Clone repository
+git clone https://github.com/Xiancaijiang/RM_SIMULATION.git
+cd RM_SIMULATION
 
-- FAST_LIO
+# Build with colcon
+colcon build
+source install/setup.bash
+```
 
-	To explain the key parts of FAST_LIO algorithm
+## Running the System
 
-- ICP_registration
+### Simulation Mode
+```bash
+ros2 launch rm_nav_bringup bringup_sim.launch.py
+```
 
-	To explain the key parts of icp_registration algorithm
+### Real Robot Mode  
+```bash
+ros2 launch rm_nav_bringup bringup_real.launch.py
+```
 
+## Performance Optimization
 
+1. **Localization Optimization**
+   - Tune FAST_LIO parameters in `config/fastlio_params.yaml`
+   - Adjust ICP registration thresholds in `config/icp.yaml`
+   - Optimize IMU filtering parameters
 
+2. **Perception Optimization**  
+   - Configure ground segmentation parameters
+   - Optimize point cloud downsampling rates
+   - Tune IMU complementary filter weights
 
+3. **Navigation Optimization**
+   - Adjust global planner cost weights
+   - Tune local planner trajectory parameters  
+   - Optimize costmap layer configurations
 
 ## Acknowledgments
-
-​		Thanks for Chen's selfless open source codehttps://github.com/LihanChen2004/pb_rm_simulation.git.
+- Thanks to Chen's open source code: https://github.com/LihanChen2004/pb_rm_simulation
