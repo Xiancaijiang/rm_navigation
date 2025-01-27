@@ -106,19 +106,36 @@ nav_rviz:=True
 ## 性能优化建议
 
 ### 1. 定位优化
-- 调整FAST_LIO参数 (`config/fastlio_params.yaml`)
-- 优化ICP配准阈值 (`config/icp.yaml`)  
-- 调整IMU滤波器参数
+- **FAST_LIO参数优化** (`config/fastlio_params.yaml`)
+  - 降低`filter_size_surf`和`filter_size_map`值可提高精度但增加计算量
+  - 调整`max_iteration`平衡精度和实时性
+  - 根据场景调整`cube_side_length`优化内存使用
+  - 关闭`runtime_pos_log_enable`和`pcd_save.pcd_save_en`可减少I/O开销
+
+- **ICP配准优化** (`config/icp_registration_sim.yaml`)
+  - 根据场景复杂度调整`rough_leaf_size`和`refine_leaf_size`
+  - 优化`thresh`阈值提高配准精度
+  - 调整`yaw_offset`和`yaw_resolution`提高旋转估计精度
 
 ### 2. 感知优化
-- 配置地面分割参数
-- 优化点云降采样率
-- 调整IMU互补滤波器权重
+- **点云处理**
+  - 根据场景复杂度调整点云降采样率
+  - 优化地面分割参数减少误分割
+  - 调整IMU互补滤波器权重提高姿态估计精度
 
 ### 3. 导航优化
-- 调整全局规划器代价权重
-- 优化局部规划器轨迹参数
-- 配置代价地图层参数
+- **全局规划**
+  - 调整代价权重平衡路径长度和安全性
+  - 优化地图分辨率提高规划精度
+
+- **局部规划**
+  - 调整TEB参数优化轨迹平滑度
+  - 优化动态避障参数提高响应速度
+
+### 4. 系统级优化
+- 根据硬件性能调整线程池大小
+- 优化消息队列长度平衡延迟和内存使用
+- 关闭不必要的可视化输出（如`lio_rviz`）减少资源占用
 
 ## 代码结构
 
