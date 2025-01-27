@@ -8,9 +8,40 @@
 ## 主要模块
 
 ### 1. 定位模块
-- **FAST_LIO**: 轻量快速的激光雷达-惯性里程计
-- **Point-LIO**: 基于点云的激光雷达-惯性里程计
-- **ICP配准**: 用于地图匹配的点云配准
+
+系统采用多传感器融合的定位方案，包含以下核心组件：
+
+- **FAST_LIO**: 轻量快速的激光雷达-惯性里程计，用于实时位姿估计
+- **Point-LIO**: 基于点云的激光雷达-惯性里程计，提供更高精度的定位
+- **ICP配准**: 用于地图匹配的点云配准，实现全局定位
+
+#### 定位模式说明
+
+系统支持三种定位方式，通过`localization`参数选择：
+
+1. **icp模式** (默认)
+   - 使用ICP配准进行地图匹配
+   - 适用于已建图环境的精确定位
+   - 需要预先构建高精度点云地图
+
+2. **amcl模式**
+   - 使用自适应蒙特卡洛定位
+   - 适用于2D栅格地图环境
+   - 计算资源消耗较低
+
+3. **slam_toolbox模式**
+   - 使用SLAM工具箱进行同步定位与建图
+   - 适用于未知环境的实时建图与定位
+   - 需要更多计算资源
+
+#### LIO算法说明
+
+`lio`参数用于选择激光雷达-惯性里程计算法：
+
+- **fastlio**: 计算效率高，适合实时性要求高的场景
+- **pointlio**: 精度更高，适合需要高精度定位的场景
+
+注意：在`mapping`模式下，系统会自动使用选择的LIO算法进行建图；在`nav`模式下，会根据`localization`参数选择定位方式。
 
 ### 2. 感知模块  
 - **地面分割**: 实时地面平面检测
@@ -59,8 +90,8 @@ mode:=mapping \        # 运行模式 (mapping/nav)
 lio:=fastlio \         # LIO算法 (fastlio/pointlio)
 lio_rviz:=False \      # 是否显示LIO点云
 nav_rviz:=True \       # 是否显示导航可视化
-localization:=icp \    # 定位方式 (icp/amcl/slam_toolbox)
-use_sim_time:=True     # 是否使用仿真时间
+# localization:=icp \    # 定位方式 (icp/amcl/slam_toolbox)
+# use_sim_time:=True     # 是否使用仿真时间
 ```
 
 ```bash
@@ -82,6 +113,7 @@ lio:=fastlio \
 lio_rviz:=False \
 nav_rviz:=True
 ```
+
 ```bash
 ros2 launch rm_nav_bringup bringup_real.launch.py \
 world:=YOUR_WORLD_NAME \
